@@ -14,6 +14,7 @@ import { BatchManager, type BatchFile, type BatchState } from '../services/batch
 import { FirestoreSyncManager, type JournalEntry } from '../services/firestore-sync-manager'
 import { changeTrackingService } from '../services/changeTracking'
 import { sessionSecurityService } from '../services/sessionSecurityService'
+import { sessionRecoveryService } from '../services/sessionRecoveryService'
 
 export interface UseMultiUploadOptions {
   selectedClientOrganization?: ClientOrganization | null
@@ -36,6 +37,7 @@ export const useMultiUploadSimplified = (options: UseMultiUploadOptions = {}) =>
   // Service instances (using refs to maintain consistency)
   const batchManager = useRef<BatchManager | null>(null)
   const syncManager = useRef<FirestoreSyncManager | null>(null)
+  const recoveryChecked = useRef<boolean>(false)
 
   // Initialize services
   useEffect(() => {
@@ -51,6 +53,46 @@ export const useMultiUploadSimplified = (options: UseMultiUploadOptions = {}) =>
 
     setIsInitialized(true)
   }, [])
+
+  // Check for recoverable results from previous sessions (one-time fetch on login)
+  useEffect(() => {
+    if (!isInitialized || recoveryChecked.current) return
+
+    const checkRecovery = async () => {
+      try {
+        console.log('🔄 Checking for recoverable results from previous session...')
+        recoveryChecked.current = true
+        
+        const recovery = await sessionRecoveryService.checkForRecoverableResults()
+        
+        if (recovery.hasRecoveredData && recovery.journalEntries.length > 0) {
+          console.log(`✅ Recovered ${recovery.journalEntries.length} journal entries from previous session`)
+          
+          // Set recovered entries immediately (before listener starts)
+          setJournalEntries(recovery.journalEntries)
+          
+          // Notify user about recovered data
+          toast.success(
+            `📋 Recovered ${recovery.resultCount} result(s) from your previous session`,
+            { duration: 5000, icon: '🔄' }
+          )
+          
+          // Start listener to pick up any real-time updates
+          if (syncManager.current) {
+            console.log('🚀 Starting Firestore listener for recovered session')
+            syncManager.current.startListening()
+          }
+        } else {
+          console.log('✅ No recoverable data found (clean session)')
+        }
+      } catch (error) {
+        console.error('❌ Session recovery check failed:', error)
+        // Don't block the app - just log the error
+      }
+    }
+
+    checkRecovery()
+  }, [isInitialized])
 
   // Subscribe to batch state changes
   useEffect(() => {
@@ -401,6 +443,8 @@ export const useMultiUploadSimplified = (options: UseMultiUploadOptions = {}) =>
       
       if (result.archived_count > 0) {
         toast.success(`📦 Archived ${result.archived_count} completed results`)
+        // Clear recovery state since we just archived
+        sessionRecoveryService.clearRecoveryState()
       } else {
         toast('No completed results to archive', { icon: '📭' })
       }

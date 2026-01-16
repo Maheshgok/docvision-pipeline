@@ -1,52 +1,110 @@
-# Invoice Processing Pipeline - Current Working Architecture
+# Invoice Processing Pipeline
 
-## Architecture Overview
-Multi-stage orchestrated pipeline for AI-powered invoice processing with temporary storage coordination.
+> AI-powered invoice processing system with multi-tenant support, real-time updates, and automated journal entry generation for Indian businesses.
 
-## Current Working Services
+## 🏗️ Architecture
 
-### Core Components
-- **initial-api/Cloudrun_version/** - Entry point and file upload handler
-- **pipeline-orchestrator/** - Central coordinator for 6-stage processing
-- **field-standardizer/** - Field mapping and standardization
-- **data-combiner/** - Final assembly and result formatting
-- **data-extractor/** - OCR and basic text extraction  
-- **queue-enrichment-processor/** - Data enrichment and validation
-- **archive-manager/** - Result archiving and lifecycle management
+```
+Frontend (Netlify)
+     ↓
+initial-api (Cloud Run) → orchestrator-service → data-extractor-v2
+                                                        ↓
+Firestore ← data-combiner ← field-standardizer-v2 ← enrichment-worker
+```
 
-### Frontend
-- **invoice-app-v2/** - React frontend with multi-tenant support
+### Services
 
-### Shared Infrastructure
-- **shared/temp_storage_manager.py** - Inter-stage coordination and temporary storage
+| Service | Purpose | Tech |
+|---------|---------|------|
+| `invoice-app-v2/` | React frontend SPA | React + Vite + TypeScript + Tailwind |
+| `initial-api/` | File upload, auth, pipeline trigger | Python + Flask |
+| `orchestrator-service/` | Pipeline coordination | Python + Flask |
+| `data-extractor-v2/` | OCR using OpenAI Vision API | Python + OpenAI |
+| `enrichment-worker/` | Business logic enrichment | Python + OpenAI |
+| `field-standardizer-v2/` | Field normalization & journal entries | Python + OpenAI |
+| `data-combiner/` | Final Firestore write | Python + Flask |
 
-## Deployment Status
-All services deployed to Google Cloud Run in **watch-mail-trial** project.
+### Infrastructure
+- **Cloud Provider**: Google Cloud Platform
+- **Project**: `watch-mail-trial` (asia-south1)
+- **Frontend Hosting**: Netlify (auto-deploy from main)
+- **Database**: Firebase Firestore
+- **Auth**: Firebase Authentication (Google OAuth + Email)
+- **Storage**: Google Cloud Storage (user-isolated buckets)
 
-## Current Issues
-- Pipeline processing with persistent 401 authentication errors
-- Service communication issues despite CORS and authentication updates
-- End-to-end processing not completing successfully
+## 🚀 Quick Start
 
-## Archived Components
-Legacy files and outdated services moved to `archive/` directory:
-- Old individual functional services (replaced by orchestrator)
-- PWA version (replaced by v2 frontend)
-- Legacy queue processor 
-- Outdated documentation and test files
-
-## Next Steps
-1. Debug orchestrator authentication flow
-2. Verify service-to-service communication
-3. Complete end-to-end pipeline testing
-4. Implement proper monitoring and error handling
-
-## Quick Start
+### Frontend Development
 ```bash
-# Deploy all services
-./deploy.sh
-
-# Start frontend development
 cd invoice-app-v2
+npm install
 npm run dev
 ```
+
+### Deploy Frontend (auto on push)
+```bash
+git push origin main  # Netlify auto-deploys
+```
+
+### Deploy Backend Service
+```bash
+cd {service-folder}
+gcloud run deploy {service-name} --source . --region asia-south1
+```
+
+## 📁 Project Structure
+
+```
+├── .github/
+│   ├── copilot-instructions.md    # GitHub Copilot context
+│   └── AI_AGENT_GUIDE.md          # Comprehensive AI agent guide
+├── invoice-app-v2/                # Frontend React app
+├── initial-api/                   # Upload & auth service
+├── orchestrator-service/          # Pipeline coordinator
+├── data-extractor-v2/             # OCR service
+├── enrichment-worker/             # Enrichment service
+├── field-standardizer-v2/         # Standardization service
+├── data-combiner/                 # Final write service
+├── shared/                        # Shared utilities
+├── config/                        # Configuration files
+├── schemas/                       # Data schemas
+└── prompts/                       # AI prompts
+```
+
+## 🔑 Key Features
+
+- **Multi-tenant isolation**: Each user's data in `users/{uid}/` subcollections
+- **Real-time updates**: Firestore listeners stream processing status
+- **Session recovery**: Unarchived results restored on login after crashes
+- **Lazy loading**: Firestore listeners start only after first upload
+- **Local archiving**: Archive operations run directly from browser (no Cloud Run dependency)
+
+## 📋 For AI Agents
+
+Read these files before making changes:
+1. [.github/AI_AGENT_GUIDE.md](.github/AI_AGENT_GUIDE.md) - **Comprehensive development guide with common mistakes**
+2. [.github/copilot-instructions.md](.github/copilot-instructions.md) - Quick patterns reference
+
+### Critical Rules
+- ❌ NEVER auto-archive on tab switch/page hide
+- ❌ NEVER use `orderBy` without composite index
+- ✅ ALWAYS use user-isolated Firestore paths
+- ✅ ALWAYS verify auth token on backend endpoints
+
+## 🔄 Recent Changes (v1.1.0)
+
+- **Fixed**: Auto-archive on tab switch causing data loss
+- **Added**: Session recovery for crash resilience
+- **Switched**: Archive to local-only (no Cloud Run dependency)
+- **Cleaned**: Removed 255 unused files (preserved in git at v1.0.0)
+
+## 📊 Version History
+
+| Version | Date | Changes |
+|---------|------|---------|
+| v1.0.0 | 2026-01-15 | Initial stable release |
+| v1.1.0 | 2026-01-16 | Bug fixes, session recovery, code cleanup |
+
+## 📝 License
+
+Proprietary - All rights reserved

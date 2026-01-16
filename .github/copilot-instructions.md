@@ -1,144 +1,95 @@
 # GitHub Copilot Instructions - Invoice Processing System
 
+> **⚠️ Read the full AI Agent Guide**: [.github/AI_AGENT_GUIDE.md](AI_AGENT_GUIDE.md) for comprehensive patterns, common mistakes, and debugging tips.
+
 ## Project Overview
-This is a **multi-tenant invoice processing system** with AI-powered OCR, real-time data sync, and organization-based access control. The system processes invoices through Google Cloud Run services and generates accounting journal entries for Indian businesses.
+Multi-tenant invoice processing system with AI-powered OCR, real-time Firestore sync, and automated journal entry generation for Indian businesses.
 
-## Architecture Patterns
+## Critical Rules (NEVER Break)
 
-### Multi-Tenant Data Isolation
-- **User collections**: `users/{uid}/invoice_results/` - Each user's data is completely isolated
-- **Organization collections**: `organizations/{orgId}/shared_data/` - Org-level sharing with role-based access
-- **Service pattern**: All services extend base classes with user/org context injection
-- **Permission checking**: Every data operation validates user permissions through `userService.hasPermission()`
+1. **❌ NEVER auto-archive on tab switch/page hide** - Caused major data loss
+2. **❌ NEVER use `orderBy` without composite index** - Will fail at runtime
+3. **✅ ALWAYS use user-isolated paths**: `users/{uid}/collection_name`
+4. **✅ ALWAYS verify auth** on backend endpoints
 
-### Service-Oriented Architecture
-```typescript
-// Core service pattern - always inject user context
-class BaseService {
-  protected getUserDataPath(collection: string): string {
-    return userService.getUserDataPath(collection) // users/{uid}/{collection}
-  }
-}
-
-// Usage in firestore-realtime.ts, archive.ts, etc.
-const userCollectionPath = userService.getUserDataPath('invoice_results')
+## Active Pipeline
+```
+initial-api → orchestrator-service → data-extractor-v2 → enrichment-worker → field-standardizer-v2 → data-combiner → Firestore
 ```
 
-### Real-Time State Management
-- **Archive-based performance**: Active collections stay small, completed items auto-archive
-- **Lazy loading**: Firestore listeners start only after first upload to avoid unnecessary connections  
-- **Batch processing**: Files processed in batches with progress tracking via `BatchManager`
-- **State synchronization**: `FirestoreSyncManager` bridges Firestore real-time updates to local state
+## Key Patterns
 
-## Key Workflows
+### User-Isolated Firestore Paths
+```typescript
+// ✅ CORRECT
+collection(db, `users/${user.uid}/invoice_results`)
+// OR
+userService.getUserDataPath('invoice_results')
 
-### Development
-```bash
-# Start dev server (auto-detects port conflicts)
-cd invoice-app-v2 && npm run dev
-
-# Build with proper chunking for Firebase/UI libraries
-npm run build
-
-# Deploy to Netlify (auto-triggered on main branch push)
-git push origin main
+// ❌ WRONG
+collection(db, 'invoice_results')
 ```
 
-### File Upload & Processing Flow
-1. **Permission check**: `checkUsageLimits()` validates user quotas
-2. **File validation**: `validateFileSize()` against user limits
-3. **Upload to GCS**: Direct upload with signed URLs from `initial-api` service
-4. **Queue processing**: Cloud Run `initial-analysis` processes with OpenAI Vision API
-5. **Real-time updates**: Results stream back via Firestore listeners
-6. **Auto-archive**: Completed results archived on CSV download or page refresh
-
-### User Management (Admin Features)
+### Service Instances in Refs
 ```typescript
-// Organization-based user creation (admin-only)
-await organizationService.inviteUser(email, role, organizationId)
-
-// Permission validation pattern used throughout
-const canEdit = await userService.hasPermission('canEdit')
-if (!canEdit) throw new Error('Insufficient permissions')
-```
-
-## Critical Code Patterns
-
-### Error Handling with User Context
-```typescript
-// Always include user context in error logs
-console.error('❌ Error for user:', userService.getCurrentUserUID(), error)
-
-// User-friendly error messages with fallbacks
-error.userMessage = errorMessages[error.code] || error.message
-```
-
-### Firestore Query Patterns
-```typescript
-// ALWAYS use user-isolated paths
-const userQuery = query(
-  collection(db, userService.getUserDataPath('invoice_results')),
-  where('userUID', '==', user.uid), // Double verification
-  orderBy('createdAt', 'desc')
-)
-
-// Organization queries require additional permission checks
-if (await userService.hasPermission('canViewOthersData')) {
-  const orgQuery = query(/* organization-level collection */)
-}
-```
-
-### React State Management
-```typescript
-// Service instances in refs to prevent recreation
+// ✅ CORRECT - Prevents recreation on re-render
 const batchManager = useRef<BatchManager | null>(null)
 const syncManager = useRef<FirestoreSyncManager | null>(null)
-
-// Permission-based UI rendering
-const { hasPermission } = useAuth()
-{hasPermission('canUpload') && <UploadComponent />}
 ```
 
-## External Integrations
+### Firestore Listener Cleanup
+```typescript
+useEffect(() => {
+  const unsubscribe = onSnapshot(query, callback)
+  return () => unsubscribe()  // ✅ Always cleanup
+}, [user?.uid])
+```
 
-### Google Cloud Services
-- **initial-api**: File upload signed URLs (`https://initial-api-*.run.app`)
-- **initial-analysis**: OpenAI Vision processing (`https://initial-analysis-*.run.app`)  
-- **archive-manager**: Data lifecycle management (`https://archive-manager-*.run.app`)
-- **Cloud Storage**: `invoice-processing-bucket` with user-prefixed paths
+### Archive Triggers (ONLY these)
+- ✅ Click "Download CSV"
+- ✅ Click "Archive" button
+- ✅ Click "Logout"
+- ❌ NOT on tab switch
+- ❌ NOT on page refresh
 
-### Firebase Configuration
-- **Auth**: Google OAuth + email/password with custom claims for organizations
-- **Firestore**: Per-user subcollections with security rules enforcing isolation
-- **Environment**: All config in `.env` files, production values in Netlify environment
+## Console Logging Prefixes
+- 🔥 Firestore operations
+- 📦 Archive operations
+- ⚡ Real-time updates
+- 📋 Data/entries
+- ✅ Success
+- ❌ Error
+- 🔄 In progress
 
-## Component Conventions
+## Quick Reference
 
-### File Organization
-- **Pages**: `src/pages/` - Route-level components with full business logic
-- **Services**: `src/services/` - Singleton classes, always export instance as `{serviceName}Service`
-- **Hooks**: Custom hooks prefix with `use`, encapsulate service interactions
-- **Types**: Shared interfaces in `src/types/`, organized by domain
+### Frontend Commands
+```bash
+cd invoice-app-v2
+npm run dev      # Development
+npm run build    # Production build
+```
 
-### Styling Patterns
-- **Tailwind utility classes**: Primary styling approach
-- **Component variants**: Use `clsx` for conditional classes
-- **Responsive design**: Mobile-first with `lg:` breakpoints
-- **Status colors**: Green=success, Red=error, Blue=processing, Amber=warning
+### Deploy Firestore Rules
+```bash
+firebase deploy --only firestore:rules
+```
 
-### Error Boundaries
-- **Toast notifications**: `react-hot-toast` for user feedback
-- **Console logging**: Structured logs with emoji prefixes (🔥=Firestore, 📦=Archive, ⚡=Real-time)
-- **Graceful degradation**: Always provide fallback UI states
+### View Cloud Run Logs
+```bash
+gcloud run services logs read {service} --region=asia-south1 --limit=50
+```
 
-## Testing Patterns
-- **Local testing**: Use Firebase emulator for Firestore operations
-- **Permission testing**: Mock different user roles in `userService`
-- **File upload testing**: Test with various file sizes/types against user limits
-- **Real-time testing**: Verify proper cleanup of Firestore listeners
+## File Structure
+- **Services**: `src/services/{name}Service.ts` - Singleton pattern
+- **Hooks**: `src/hooks/use{Name}.ts` - React hooks
+- **Pages**: `src/pages/{Name}.tsx` - Route components
+- **Types**: `src/types/` - TypeScript interfaces
 
-## Deployment Notes
-- **Netlify**: Automatic deploys from main branch, environment variables configured
-- **Cloud Run**: Services auto-scale, require Firebase Auth tokens in headers  
-- **Firestore security**: Rules enforce user/org isolation, always test rule changes
-- **Monitoring**: Check Cloud Run logs for processing errors, Firestore usage for quota limits
+## GCP Details
+- **Project**: `watch-mail-trial`
+- **Region**: `asia-south1`
+- **URL Pattern**: `https://{service}-812016027146.asia-south1.run.app`
+
+---
+*See [AI_AGENT_GUIDE.md](AI_AGENT_GUIDE.md) for full documentation*

@@ -37,6 +37,12 @@ service cloud.firestore {
         && request.resource.data.userUID == userId;  // Verify data integrity
     }
     
+    // User-specific archived invoice results (for local archiving)
+    match /users/{userId}/invoice_results_archive/{resultId} {
+      allow read, write: if request.auth != null 
+        && request.auth.uid == userId;
+    }
+    
     // User organization stored under each user: allow user to manage their own organization
     match /users/{userId}/user_organization/{orgId} {
       allow read, write, create, update, delete: if request.auth != null && request.auth.uid == userId;

@@ -4,6 +4,7 @@
  */
 
 import { archiveService } from './archive'
+import { sessionRecoveryService } from './sessionRecoveryService'
 
 export enum CleanupTrigger {
   MANUAL_LOGOUT = 'manual_logout',
@@ -87,6 +88,9 @@ class CleanupManager {
 
       // Cleanup blob URLs and other memory leaks
       this.cleanupMemory()
+
+      // Clear session recovery state after successful archive
+      sessionRecoveryService.clearRecoveryState()
 
       const result: CleanupResult = {
         success: true,

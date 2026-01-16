@@ -288,35 +288,23 @@ const MultiUploadDashboard: React.FC = () => {
     }
   }, [])
 
-  // Handle window close/refresh - reliable archive trigger
+  // Handle window close/refresh - ONLY cleanup memory, NOT archive data
+  // Archiving should only happen on explicit user action (download CSV, logout, manual archive button)
   useEffect(() => {
     if (!user?.email || !isInitialized) return
 
-    // Use pagehide for actual page unload detection
+    // Use pagehide for memory cleanup only
     const handlePageHide = (e: PageTransitionEvent) => {
-      // Clean up memory before page unload
+      // Clean up memory (blob URLs, etc.) before page unload
       memoryManager.cleanup()
-      
-      // Only archive if page is actually being unloaded (not just cached)
-      if (!e.persisted && batchState.completedFiles > 0) {
-        console.log('🔄 Page unloading - triggering archive for cleanup...')
-        archiveCompletedResults().catch(err => 
-          console.error('❌ Page hide archive failed:', err)
-        )
-      }
+      // DO NOT auto-archive - this was causing data loss on tab switch/refresh!
     }
 
-    // Conservative beforeunload - only for actual navigation/close
+    // Conservative beforeunload - memory cleanup only
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      // Clean up memory
+      // Clean up memory only
       memoryManager.cleanup()
-      
-      if (batchState.completedFiles > 0) {
-        console.log('🔄 Window unloading - triggering archive...')
-        archiveCompletedResults().catch(err => 
-          console.error('❌ Before unload archive failed:', err)
-        )
-      }
+      // DO NOT auto-archive - user hasn't explicitly requested it
     }
 
     window.addEventListener('pagehide', handlePageHide)
@@ -326,7 +314,7 @@ const MultiUploadDashboard: React.FC = () => {
       window.removeEventListener('pagehide', handlePageHide)
       window.removeEventListener('beforeunload', handleBeforeUnload)
     }
-  }, [user?.email, isInitialized, archiveCompletedResults])
+  }, [user?.email, isInitialized])
 
   // Handle user logout - always archive before logout
   const handleLogout = useCallback(async () => {

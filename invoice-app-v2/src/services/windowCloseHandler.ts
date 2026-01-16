@@ -85,80 +85,47 @@ class WindowCloseHandler {
   }
 
   /**
-   * Handle pagehide event - perform cleanup only on actual page unload
+   * Handle pagehide event - only memory cleanup, NO auto-archiving
+   * Auto-archiving on page hide was causing data loss on tab switch/refresh
    */
   private handlePageHide = async (event: PageTransitionEvent) => {
-    // Only cleanup on actual navigation away (not just tab switching)
+    // Only cleanup memory on actual navigation away (not just tab switching)
     if (event.persisted) {
       console.log('📄 Page cached, not performing cleanup')
       return // Don't cleanup if page is just being cached
     }
     
-    if (!this.user || this.cleanupInProgress) {
+    if (!this.user) {
       return
     }
     
-    console.log('🚪 Page actually unloading - triggering cleanup for user:', this.user.email)
+    console.log('🚪 Page unloading - memory cleanup only (no auto-archive)')
     
-    // Perform immediate synchronous cleanup if possible
-    if (this.hasResults) {
-      try {
-        // Use sendBeacon for fire-and-forget archive request
-        const token = await authService.getIdToken()
-        if (token && navigator.sendBeacon) {
-          const archiveData = JSON.stringify({
-            action: 'archive_on_close',
-            userUID: this.user.uid,
-            timestamp: Date.now()
-          })
-          
-          // Note: This would need a proper endpoint, for now just log
-          console.log('📡 Would send beacon for archive on close:', archiveData)
-        }
-      } catch (error) {
-        console.warn('⚠️ Beacon archive failed:', error)
-      }
-    }
-    
-    // Also trigger async cleanup (won't complete but starts the process)
-    this.performAsyncCleanup()
+    // NOTE: We no longer auto-archive here!
+    // Auto-archiving was causing users to lose their data on tab switch/refresh.
+    // Archiving should only happen on explicit user action:
+    // - Clicking "Download CSV" button
+    // - Clicking "Archive" button
+    // - Clicking "Logout" button
   }
 
   /**
-   * Handle visibility change - cleanup if hidden for extended time
+   * Handle visibility change - NO auto-archiving anymore
+   * Just log visibility changes for debugging
    */
   private handleVisibilityChange = () => {
-    const now = Date.now()
-    this.lastVisibilityChange = now
-    
-    if (document.visibilityState === 'hidden' && this.user && this.hasResults) {
-      console.log('👁️ Page hidden with results - will cleanup only on actual page close')
-      
-      // Clear any existing timeout to avoid multiple concurrent ones
+    if (document.visibilityState === 'hidden') {
+      console.log('👁️ Page hidden - no auto-archive (user may return)')
+      // Clear any existing timeout
       if (this.visibilityTimeout) {
         clearTimeout(this.visibilityTimeout)
         this.visibilityTimeout = null
       }
-      
-      // Only schedule cleanup after a very long delay (30 minutes)
-      // This gives users plenty of time to return without losing their results
-      this.visibilityTimeout = setTimeout(() => {
-        // Double-check: only cleanup if still hidden and this timeout hasn't been superseded
-        if (document.visibilityState === 'hidden' && 
-            this.user && 
-            this.hasResults &&
-            this.lastVisibilityChange <= now) {
-          console.log('⏰ Page still hidden after extended delay - triggering cleanup')
-          this.performAsyncCleanup()
-        } else {
-          console.log('🔄 Page visibility changed during timeout - skipping cleanup')
-        }
-        this.visibilityTimeout = null
-      }, 1800000) // 30 minutes delay
+      // DO NOT schedule any cleanup - auto-archiving causes data loss!
       
     } else if (document.visibilityState === 'visible') {
-      console.log('👁️ Page visible again - cancelling any pending cleanup')
-      // Cancel cleanup if page becomes visible again
+      console.log('👁️ Page visible again')
+      // Clear any pending timeout (shouldn't exist anymore, but just in case)
       if (this.visibilityTimeout) {
         clearTimeout(this.visibilityTimeout)
         this.visibilityTimeout = null
@@ -167,7 +134,7 @@ class WindowCloseHandler {
   }
 
   /**
-   * Handle manual logout
+   * Handle manual logout - ONLY place where cleanup should auto-trigger
    */
   private handleManualLogout = () => {
     console.log('👤 Manual logout triggered')
