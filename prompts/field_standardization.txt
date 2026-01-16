@@ -1,0 +1,78 @@
+Standardize and normalize the following invoice data to canonical schema format.
+
+Header Data:
+{header_data}
+
+Enriched Line Items:
+{enriched_items}
+
+Normalize to this standard schema:
+
+{{
+  "canonical_header": {{
+    "vendor": {{
+      "name": "",
+      "address": {{
+        "street": "",
+        "city": "",
+        "state": "",
+        "postal_code": "",
+        "country": ""
+      }},
+      "tax_id": "",
+      "contact": {{
+        "phone": "",
+        "email": ""
+      }}
+    }},
+    "customer": {{
+      "name": "",
+      "address": {{
+        "street": "",
+        "city": "",
+        "state": "",
+        "postal_code": "",
+        "country": ""
+      }},
+      "tax_id": "",
+      "contact": {{
+        "phone": "",
+        "email": ""
+      }}
+    }},
+    "invoice": {{
+      "number": "",
+      "date": "",
+      "due_date": "",
+      "currency": "",
+      "payment_terms": ""
+    }},
+    "totals": {{
+      "subtotal": 0.00,
+      "tax_amount": 0.00,
+      "discount_amount": 0.00,
+      "total_amount": 0.00,
+      "currency": ""
+    }}
+  }},
+  "canonical_line_items": [
+    {{
+      "line_number": 1,
+      "description": "",
+      "product_code": "",
+      "hsn_sac_code": "",
+      "quantity": 0,
+      "unit": "",
+      "unit_price": 0.00,
+      "line_total": 0.00,
+      "tax_rate": 0.00,
+      "tax_amount": 0.00,
+      "business_category": "",
+      "expense_type": "",
+      "cost_center": ""
+    }}
+  ]
+}}
+
+Ensure all fields are properly formatted, standardized, and validated.
+Return ONLY the JSON response, no additional text.

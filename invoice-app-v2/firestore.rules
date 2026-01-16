@@ -1,0 +1,145 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // System status document for session management
+    match /system_status/{statusId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // User profiles - users can read/write their own profile
+    match /users/{userId} {
+      allow read, write: if request.auth != null 
+        && request.auth.uid == userId;
+      // Allow super_admin to read all user profiles for payment management
+      allow read: if request.auth != null 
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super_admin';
+      // Allow super_admin to write to any user profile for payment verification
+      allow write: if request.auth != null 
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super_admin';
+    }
+    
+    // Allow super_admin to query users collection for payment management
+    match /users/{document=**} {
+      allow read: if request.auth != null 
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super_admin';
+    }
+    
+    // User-specific invoice results with user-isolated paths
+    match /users/{userId}/invoice_results/{resultId} {
+      allow read, write: if request.auth != null 
+        && request.auth.uid == userId;
+      // Allow service account writes for queue-processor
+      allow write: if request.auth == null  // Service account context
+        && request.resource.data.userUID == userId;  // Verify data integrity
+    }
+    
+    // User organization stored under each user: allow user to manage their own organization
+    match /users/{userId}/user_organization/{orgId} {
+      allow read, write, create, update, delete: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Allow authenticated users to query the user_organization collection
+    match /users/{userId}/user_organization/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Client organizations stored under each user: allow user to manage their clients
+    match /users/{userId}/client_organizations/{clientId} {
+      allow read, write, create, update, delete: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Allow authenticated users to query the client_organizations collection
+    match /users/{userId}/client_organizations/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // User session management - users can only manage their own sessions
+    match /users/{userId}/sessions/{sessionId} {
+      allow read, write, create: if request.auth != null 
+        && request.auth.uid == userId;
+      // Allow cleanup operations by ensuring session belongs to user
+      allow delete: if request.auth != null 
+        && request.auth.uid == userId;
+    }
+    
+    // Organizations - allow reading for organization discovery during signup
+    match /organizations/{orgId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null 
+        && (request.auth.uid in resource.data.adminIds 
+            || request.auth.uid == resource.data.ownerId);
+      // Allow creation during signup process
+      allow create: if request.auth != null;
+    }
+    
+    // Organization-scoped invoice results
+    match /organizations/{orgId}/invoice_results/{resultId} {
+      allow read, write: if request.auth != null 
+        && (
+          // User can access their own data
+          request.auth.uid == resource.data.userUID ||
+          // Or admin can access all organization data
+          request.auth.uid in get(/databases/$(database)/documents/organizations/$(orgId)).data.adminIds
+        );
+      // Allow creation for authenticated users in the organization
+      allow create: if request.auth != null 
+        && request.auth.uid == request.resource.data.userUID;
+      // Allow service account writes for queue-processor
+      allow write: if request.auth == null  // Service account context
+        && request.resource.data.organizationId == orgId;  // Verify data integrity
+    }
+    
+    // User invites - can read invites for your email
+    match /user_invites/{inviteId} {
+      allow read: if request.auth != null 
+        && request.auth.token.email == resource.data.email;
+      allow write: if request.auth != null;
+    }
+    
+    // Legacy invoice results (for backward compatibility)
+    match /invoice_results/{jobId} {
+      allow read: if request.auth != null 
+        && request.auth.token.email == resource.data.user_email;
+      allow write: if false; // Only backend should write
+    }
+    
+    // System configuration - only super_admin can access
+    match /system_config/{configId} {
+      allow read, write: if request.auth != null 
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super_admin';
+    }
+    
+    // Package definitions - super_admin can manage, all authenticated users can read
+    match /packages/{packageId} {
+      allow read: if request.auth != null;
+      allow write, create, delete: if request.auth != null 
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super_admin';
+    }
+    
+    // Allow super_admin to query packages collection
+    match /packages/{document=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null 
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super_admin';
+    }
+    
+    // Payment requests and related collections - super_admin access
+    match /payment_requests/{document=**} {
+      allow read, write: if request.auth != null 
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super_admin';
+    }
+    
+    // For development/testing only - remove in production
+    // match /{document=**} {
+    //   allow read, write: if request.auth != null;
+    // }
+  }
+}

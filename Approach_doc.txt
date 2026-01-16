@@ -1,0 +1,484 @@
+Invoice Processing Platform
+End-to-End Architecture & Execution Approach
+
+(Serverless, LLM-Based, Multi-Tenant SaaS)
+
+1. Purpose
+
+This document defines the end-to-end architecture and execution model for a multi-tenant SaaS invoice processing platform built on Google Cloud Run and OpenAI APIs.
+
+The system is designed to:
+
+Process invoices of arbitrary length
+
+Avoid malformed or truncated LLM outputs
+
+Handle long-running enrichment reliably
+
+Minimize cold-start failures
+
+Scale cost-effectively
+
+Enforce strict tenant and user data isolation
+
+Provide asynchronous, real-time UX to the frontend
+
+2. Key Architectural Principles
+
+Job-driven execution, not session-driven
+
+Stateless compute, stateful storage
+
+Short, bounded LLM calls
+
+Chunked processing for long documents
+
+Asynchronous, resumable workflows
+
+Defense-in-depth tenant isolation
+
+Cloud Run manages lifecycle, not application code
+
+3. Explicit Non-Goals (What We Do Not Do)
+
+❌ No service lifecycle control based on user login/logout
+
+❌ No synchronous chaining of Cloud Run services
+
+❌ No long-running HTTP requests
+
+❌ No in-memory passing of large JSON objects
+
+❌ No single “mega” OpenAI call
+
+❌ No frontend blocking on backend processing
+
+❌ No reliance on sessions for isolation or execution control
+
+4. High-Level System Architecture
+Frontend (Multi-Tenant UI)
+  │
+  │ (Signed URL Upload)
+  ▼
+Google Cloud Storage (Raw Invoices)
+  │
+  │ (Finalize Event or HTTP Trigger)
+  ▼
+Orchestrator (Cloud Run – Lightweight)
+  │
+  ├─ Extractor Service (OpenAI Call #1)
+  │      → Firestore (Raw Headers + Raw Line Items)
+  │
+  ├─ Chunk Dispatcher
+  │      → Firestore (Chunk Metadata)
+  │      → Pub/Sub
+  │
+  ├─ Enrichment Workers (OpenAI Call #2, Parallel)
+  │      → Firestore (Enriched Line Items)
+  │
+  ├─ Standardizer (OpenAI Call #3)
+  │      → Firestore (Canonical Schema)
+  │
+  └─ Combiner (Deterministic)
+         → GCS (Final Output)
+
+
+The frontend listens to Firestore for job state changes and retrieves final results from Cloud Storage.
+
+5. Execution Model (Job-Centric)
+5.1 Core Concept
+
+Jobs are independent of user sessions.
+
+Users may log out
+
+Browsers may close
+
+Processing continues reliably
+
+5.2 Job Lifecycle
+CREATED
+ → EXTRACTING
+ → ENRICHING
+ → STANDARDIZING
+ → COMBINING
+ → COMPLETED | FAILED
+
+
+Job state in Firestore is the single source of truth.
+
+6. Storage Strategy
+6.1 Storage Responsibilities
+Data Type	Storage	Purpose
+Raw invoice	GCS	Large binary input
+Extraction output	Firestore	Structured intermediate state
+Enrichment chunks	Firestore	Parallel & retryable
+Canonical schema	Firestore	Versioned normalization
+Final output	GCS	Downloadable artifact
+
+Firestore acts as temporary workflow memory, not long-term archival storage.
+
+7. Detailed Processing Flow
+7.1 Invoice Upload
+
+Frontend uploads invoice directly to GCS using a signed URL
+
+Storage path:
+
+gs://invoices-raw/{tenant_id}/{job_id}/invoice.pdf
+
+7.2 Orchestrator Initialization
+
+Responsibilities:
+
+Generate job_id
+
+Initialize Firestore job document
+
+Set initial job status
+
+Trigger extraction step
+
+Firestore document:
+
+tenants/{tenant_id}/jobs/{job_id} {
+  status: "EXTRACTING",
+  created_at,
+  gcs_input_path
+}
+
+
+The orchestrator is lightweight and contains no heavy dependencies.
+
+7.3 Data Extraction (OpenAI Call #1)
+
+Service: extractor-service
+Purpose: Extract raw structured data from invoice
+
+Output:
+
+{
+  "headers_raw": {...},
+  "line_items_raw": [...]
+}
+
+
+Stored at:
+
+tenants/{tenant_id}/jobs/{job_id}/extraction/main
+
+
+Malformed JSON triggers a retry of this step only.
+
+7.4 Chunk Dispatching
+
+Line items are split into bounded chunks (3–5 lines each)
+
+Chunk size is token-budget driven
+
+Deterministic chunk IDs are generated
+
+Firestore:
+
+tenants/{tenant_id}/jobs/{job_id}/chunks/{chunk_id}
+
+
+Each chunk is published to Pub/Sub for parallel processing.
+
+7.5 Enrichment Workers (OpenAI Call #2)
+
+Service: enrichment-worker
+Characteristics:
+
+One chunk per invocation
+
+Stateless
+
+Idempotent
+
+Parallel execution
+
+Each worker:
+
+Receives chunk + header context
+
+Calls OpenAI for enrichment
+
+Writes enriched output back to Firestore
+
+Failures affect only the chunk and are retried independently.
+
+7.6 Standardization (OpenAI Call #3)
+
+Two independent normalization steps:
+
+Header canonicalization
+
+Line item schema normalization
+
+Stored at:
+
+tenants/{tenant_id}/jobs/{job_id}/canonical/
+
+
+This isolates vendor variability from downstream logic.
+
+7.7 Combiner (Deterministic)
+
+Service: combiner-service
+
+No LLM usage
+
+Joins canonical headers and enriched line items
+
+Produces final structured output (CSV / JSON / XLSX)
+
+Output path:
+
+gs://invoices-final/{tenant_id}/{job_id}/result.csv
+
+7.8 Frontend Notification
+
+Firestore job status updated to COMPLETED
+
+Frontend receives real-time update
+
+User downloads final artifact from GCS
+
+8. Scaling & Cold-Start Strategy
+8.1 Service Classification
+Service	LLM	Memory	Scaling Strategy
+Orchestrator	❌	256MB	Scale-to-zero
+Extractor	✅	512MB	Scale-to-zero
+Enrichment Worker	✅	1–2GB	min-instances = 1
+Standardizer	✅	1GB	min-instances = 1
+Combiner	❌	256MB	Scale-to-zero
+8.2 Rationale
+
+Only LLM-heavy services remain warm
+
+Cold-starts are removed from the critical path
+
+Costs remain controlled and predictable
+
+9. Removal of Session-Based Compute Control
+9.1 Rejected Model
+
+User login starts services
+
+Logout shuts services down
+
+Causes:
+
+Pipeline failures
+
+Cold-start storms
+
+Race conditions
+
+9.2 Adopted Model
+
+Compute driven by jobs and Pub/Sub load
+
+Cloud Run manages scaling automatically
+
+User sessions affect UX only
+
+10. Tenant & User Data Isolation Model
+
+Tenant isolation is enforced through defense-in-depth, not by session presence.
+
+10.1 Identity & Tenant Context
+
+Every request is authenticated
+
+tenant_id and user_id are mandatory
+
+Backend rejects requests without valid tenant context
+
+10.2 Storage-Level Isolation (Primary Enforcement)
+Firestore
+tenants/{tenant_id}/jobs/{job_id}/...
+
+
+No global job collections
+
+Firestore security rules enforce tenant access
+
+Cloud Storage
+gs://invoices-raw/{tenant_id}/...
+gs://invoices-final/{tenant_id}/...
+
+
+No bucket listing
+
+Access via short-lived signed URLs
+
+10.3 Execution Isolation
+
+Cloud Run provides request-level isolation
+
+Services are stateless
+
+All storage paths constructed internally using validated tenant_id
+
+10.4 Background Processing Isolation
+
+Pub/Sub messages include tenant context
+
+Workers validate tenant identity
+
+Firestore rules remain final enforcement
+
+10.5 LLM Interaction Isolation
+
+One job per OpenAI call
+
+No shared conversation state
+
+No cross-tenant prompt reuse
+
+10.6 Frontend Access Controls
+
+Tenant-filtered queries only
+
+Users see jobs belonging to their tenant
+
+Final results accessed via tenant-scoped signed URLs
+
+10.7 Isolation Summary
+
+Isolation is enforced by:
+
+Authenticated identity
+
+Tenant-scoped storage paths
+
+Database security rules
+
+Stateless execution
+
+Controlled access paths
+
+Isolation does not rely on user sessions or service lifecycle control.
+
+11. Failure Handling & Recovery
+Failure Type	Mitigation
+OpenAI timeout	Chunk retry
+Malformed JSON	Step-level retry
+Worker crash	Pub/Sub retry
+User logout	No impact
+Partial completion	Resume from Firestore
+12. Observability & Metering
+
+Tracked per tenant and job:
+
+Step latency
+
+Token usage
+
+Retry counts
+
+Execution cost
+
+Logs are tagged with:
+
+tenant_id + job_id
+
+13. Why This Architecture Works
+
+Supports unlimited invoice length
+
+Avoids token overflow
+
+Eliminates synchronous bottlenecks
+
+Prevents session-based failures
+
+Enforces strong tenant isolation
+
+Aligns with Cloud Run’s execution model
+
+Scales predictably for SaaS workloads
+
+14. Development Standards & Modularity
+
+14.1 Code Organization
+
+Shared utilities in `/shared` folder for reusable functions
+
+Service-specific code in individual service folders
+
+Prompt templates stored as external files (not hardcoded)
+
+Configuration externalized via environment variables
+
+14.2 OpenAI Integration Standards
+
+Use latest OpenAI API formats and client libraries
+
+Centralized OpenAI call functions in `/shared/openai_utils`
+
+Standardized error handling and retry logic
+
+Token usage tracking and cost monitoring
+
+14.3 Security & Configuration
+
+All API keys stored in Google Secret Manager
+
+No hardcoded credentials in source code
+
+Environment-specific configuration files
+
+Proper secret rotation support
+
+14.4 Data Interchange Standards
+
+JSON schemas documented for all API interfaces
+
+Strict input/output validation
+
+Versioned data contracts between services
+
+Clear error response formats
+
+14.5 CORS & API Standards
+
+CORS headers configured in all services
+
+Consistent API response formats
+
+Standard HTTP status codes
+
+OpenAPI/Swagger documentation for all endpoints
+
+14.6 Modularity Requirements
+
+Each service is independently deployable
+
+Shared code packaged as reusable modules
+
+Clear service boundaries and responsibilities
+
+Easy to trace changes and dependencies
+
+Configuration-driven behavior (minimal code changes for adjustments)
+
+15. Final Recommendation
+
+This architecture is:
+
+Cloud-native
+
+Resilient to LLM limitations
+
+Secure by design
+
+Operationally simple
+
+Production-ready for multi-tenant SaaS
+
+Modular and maintainable
+
+Session-based compute control must not be reintroduced.

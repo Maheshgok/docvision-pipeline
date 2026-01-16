@@ -1,0 +1,43 @@
+Analyze these invoice line items and provide business insights for each item.
+
+Context Information:
+- Company Type: {company_type}
+- Industry: {industry}
+- Business Size: {business_size}
+
+Line Items to Analyze:
+{line_items}
+
+For each line item, provide business insights in the following JSON format:
+
+{{
+  "enriched_items": [
+    {{
+      "original_item": {{
+        "description": "",
+        "quantity": 0,
+        "rate": 0.00,
+        "total_amount": 0.00
+      }},
+      "business_insights": {{
+        "business_category": "",
+        "expense_classification": "",
+        "tax_implications": "",
+        "compliance_notes": "",
+        "cost_center_suggestion": "",
+        "budget_category": "",
+        "seasonal_pattern": "",
+        "vendor_relationship": "",
+        "approval_requirements": "",
+        "audit_flags": ""
+      }}
+    }}
+  ]
+}}
+
+Business Categories: Office Supplies, Travel, Marketing, Technology, Legal, Consulting, Utilities, Rent, Insurance, Equipment, Maintenance, Training, Entertainment, Shipping, Raw Materials, Professional Services, Software, Hardware, Communications, Fuel, Medical, Security, Cleaning, Telecommunications, Banking, Government Fees
+
+Expense Classifications: Operating Expense, Capital Expenditure, Cost of Goods Sold, Administrative, Sales & Marketing, Research & Development
+
+Provide detailed, actionable insights based on the business context provided.
+Return ONLY the JSON response, no additional text.

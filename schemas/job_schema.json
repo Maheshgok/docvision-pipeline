@@ -1,0 +1,72 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Job Document Schema",
+  "description": "Schema for job documents in Firestore",
+  "type": "object",
+  "properties": {
+    "job_id": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9_-]+$"
+    },
+    "tenant_id": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9_-]+$"
+    },
+    "user_id": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["CREATED", "EXTRACTING", "ENRICHING", "STANDARDIZING", "COMBINING", "COMPLETED", "FAILED"]
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string", 
+      "format": "date-time"
+    },
+    "gcs_input_path": {
+      "type": "string"
+    },
+    "gcs_output_path": {
+      "type": "string"
+    },
+    "processing_stats": {
+      "type": "object",
+      "properties": {
+        "total_duration_seconds": {
+          "type": "number"
+        },
+        "phase_durations": {
+          "type": "object",
+          "properties": {
+            "extraction": {"type": "number"},
+            "enrichment": {"type": "number"},
+            "standardization": {"type": "number"},
+            "combination": {"type": "number"}
+          }
+        },
+        "token_usage": {
+          "type": "object",
+          "properties": {
+            "total_tokens": {"type": "integer"},
+            "total_cost": {"type": "number"}
+          }
+        }
+      }
+    },
+    "error": {
+      "type": "object",
+      "properties": {
+        "message": {"type": "string"},
+        "error_code": {"type": "string"},
+        "phase": {"type": "string"},
+        "timestamp": {"type": "string", "format": "date-time"}
+      }
+    }
+  },
+  "required": ["job_id", "tenant_id", "user_id", "status", "created_at", "updated_at"],
+  "additionalProperties": false
+}

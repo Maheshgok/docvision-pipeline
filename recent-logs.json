@@ -1,0 +1,182 @@
+﻿[
+  {
+    "insertId": "6968aa230009925bbfb5c182",
+    "labels": {
+      "instanceId": "005eb6974c1d92a999569bc8792d75a62b2e3f37bf67baba630b2b714347ff3d01eebe63ee228417c76588a7b2198509d3a5e735f33d7a8a32799983ee81ae53fbf0a26903c9d287f908ed396341f41904c7473bd48a"
+    },
+    "logName": "projects/watch-mail-trial/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-01-15T08:49:39.913819726Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "data-combiner",
+        "location": "asia-south1",
+        "project_id": "watch-mail-trial",
+        "revision_name": "data-combiner-00019-gx7",
+        "service_name": "data-combiner"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "[2026-01-15 08:49:39 +0000] [1] [INFO] Shutting down: Master",
+    "timestamp": "2026-01-15T08:49:39.627291Z"
+  },
+  {
+    "insertId": "6968aa210006696fe8e896d9",
+    "labels": {
+      "instanceId": "005eb6974c1d92a999569bc8792d75a62b2e3f37bf67baba630b2b714347ff3d01eebe63ee228417c76588a7b2198509d3a5e735f33d7a8a32799983ee81ae53fbf0a26903c9d287f908ed396341f41904c7473bd48a"
+    },
+    "logName": "projects/watch-mail-trial/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-01-15T08:49:37.580919679Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "data-combiner",
+        "location": "asia-south1",
+        "project_id": "watch-mail-trial",
+        "revision_name": "data-combiner-00019-gx7",
+        "service_name": "data-combiner"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "[2026-01-15 08:49:37 +0000] [4] [INFO] Worker exiting (pid: 4)",
+    "timestamp": "2026-01-15T08:49:37.420207Z"
+  },
+  {
+    "insertId": "6968aa20000de3ff50fdc46a",
+    "labels": {
+      "instanceId": "005eb6974c1d92a999569bc8792d75a62b2e3f37bf67baba630b2b714347ff3d01eebe63ee228417c76588a7b2198509d3a5e735f33d7a8a32799983ee81ae53fbf0a26903c9d287f908ed396341f41904c7473bd48a"
+    },
+    "logName": "projects/watch-mail-trial/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-01-15T08:49:36.915955896Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "data-combiner",
+        "location": "asia-south1",
+        "project_id": "watch-mail-trial",
+        "revision_name": "data-combiner-00019-gx7",
+        "service_name": "data-combiner"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "[2026-01-15 08:49:36 +0000] [1] [INFO] Handling signal: term",
+    "timestamp": "2026-01-15T08:49:36.910335Z"
+  },
+  {
+    "insertId": "6968aa1f00020db862316833",
+    "labels": {
+      "instanceId": "005eb6974cc97f1950597b728bf19c15b28c1f7447ee881a6e7e29003abba9cf0933d584ac93c9ff87b9698e559669fd414ff51fad7f83d556491027d20f8dd544d16ddb69bc6c4c771e26d6cb57609e3c6b08a2fb85"
+    },
+    "logName": "projects/watch-mail-trial/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-01-15T08:49:35.420559899Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "field-standardizer-v2",
+        "location": "asia-south1",
+        "project_id": "watch-mail-trial",
+        "revision_name": "field-standardizer-v2-00008-xpd",
+        "service_name": "field-standardizer-v2"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "[2026-01-15 08:49:35 +0000] [1] [INFO] Shutting down: Master",
+    "timestamp": "2026-01-15T08:49:35.134584Z"
+  },
+  {
+    "insertId": "6968aa1c000c38baf5d44529",
+    "labels": {
+      "instanceId": "005eb6974cc97f1950597b728bf19c15b28c1f7447ee881a6e7e29003abba9cf0933d584ac93c9ff87b9698e559669fd414ff51fad7f83d556491027d20f8dd544d16ddb69bc6c4c771e26d6cb57609e3c6b08a2fb85"
+    },
+    "logName": "projects/watch-mail-trial/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-01-15T08:49:33.090780100Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "field-standardizer-v2",
+        "location": "asia-south1",
+        "project_id": "watch-mail-trial",
+        "revision_name": "field-standardizer-v2-00008-xpd",
+        "service_name": "field-standardizer-v2"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "[2026-01-15 08:49:32 +0000] [2] [INFO] Worker exiting (pid: 2)",
+    "timestamp": "2026-01-15T08:49:32.800954Z"
+  },
+  {
+    "insertId": "6968aa1c00066a374fe13511",
+    "labels": {
+      "instanceId": "005eb6974cc97f1950597b728bf19c15b28c1f7447ee881a6e7e29003abba9cf0933d584ac93c9ff87b9698e559669fd414ff51fad7f83d556491027d20f8dd544d16ddb69bc6c4c771e26d6cb57609e3c6b08a2fb85"
+    },
+    "logName": "projects/watch-mail-trial/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-01-15T08:49:32.424756543Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "field-standardizer-v2",
+        "location": "asia-south1",
+        "project_id": "watch-mail-trial",
+        "revision_name": "field-standardizer-v2-00008-xpd",
+        "service_name": "field-standardizer-v2"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "[2026-01-15 08:49:32 +0000] [1] [INFO] Handling signal: term",
+    "timestamp": "2026-01-15T08:49:32.420407Z"
+  },
+  {
+    "insertId": "6968a9e30002e2f8f5a90a1f",
+    "labels": {
+      "instanceId": "005eb6974c34a01652cfd40638b080ab16fda7c483b5e1defeae20245ebaddc2e136d7eba7ae1c5d71a2d7960028e706dc512ae79c01855bb6b5d47f17c9d51628ef49b881ffce823b3e52d78c34068aa50f1fb5"
+    },
+    "logName": "projects/watch-mail-trial/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-01-15T08:48:35.408329370Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "enrichment-worker",
+        "location": "asia-south1",
+        "project_id": "watch-mail-trial",
+        "revision_name": "enrichment-worker-00013-fn4",
+        "service_name": "enrichment-worker"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "[2026-01-15 08:48:35 +0000] [1] [INFO] Shutting down: Master",
+    "timestamp": "2026-01-15T08:48:35.189176Z"
+  },
+  {
+    "insertId": "6968a9e0000d2ddc93913fea",
+    "labels": {
+      "instanceId": "005eb6974c34a01652cfd40638b080ab16fda7c483b5e1defeae20245ebaddc2e136d7eba7ae1c5d71a2d7960028e706dc512ae79c01855bb6b5d47f17c9d51628ef49b881ffce823b3e52d78c34068aa50f1fb5"
+    },
+    "logName": "projects/watch-mail-trial/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-01-15T08:48:33.075923947Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "enrichment-worker",
+        "location": "asia-south1",
+        "project_id": "watch-mail-trial",
+        "revision_name": "enrichment-worker-00013-fn4",
+        "service_name": "enrichment-worker"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "[2026-01-15 08:48:32 +0000] [2] [INFO] Worker exiting (pid: 2)",
+    "timestamp": "2026-01-15T08:48:32.863708Z"
+  },
+  {
+    "insertId": "6968a9e000011b4c508da9eb",
+    "labels": {
+      "instanceId": "005eb6974c34a01652cfd40638b080ab16fda7c483b5e1defeae20245ebaddc2e136d7eba7ae1c5d71a2d7960028e706dc512ae79c01855bb6b5d47f17c9d51628ef49b881ffce823b3e52d78c34068aa50f1fb5"
+    },
+    "logName": "projects/watch-mail-trial/logs/run.googleapis.com%2Fstderr",
+    "receiveTimestamp": "2026-01-15T08:48:32.077395173Z",
+    "resource": {
+      "labels": {
+        "configuration_name": "enrichment-worker",
+        "location": "asia-south1",
+        "project_id": "watch-mail-trial",
+        "revision_name": "enrichment-worker-00013-fn4",
+        "service_name": "enrichment-worker"
+      },
+      "type": "cloud_run_revision"
+    },
+    "textPayload": "[2026-01-15 08:48:32 +0000] [1] [INFO] Handling signal: term",
+    "timestamp": "2026-01-15T08:48:32.072524Z"
+  }
+]

@@ -1,0 +1,41 @@
+Extract header and document information from this invoice image and return ONLY valid JSON.
+
+IMPORTANT: Your response must be ONLY valid JSON, no additional text or explanations.
+
+Extract the following information:
+- Vendor details (name, address, GST/tax number)
+- Customer details (name, address, GST/tax number)  
+- Invoice metadata (number, date, due date)
+- Financial totals (subtotal, tax amount, total amount)
+
+Return this exact JSON structure:
+{{
+  "vendor": {{
+    "name": "",
+    "address": "",
+    "gst_number": "",
+    "phone": "",
+    "email": ""
+  }},
+  "customer": {{
+    "name": "",
+    "address": "", 
+    "gst_number": "",
+    "phone": "",
+    "email": ""
+  }},
+  "invoice_details": {{
+    "number": "",
+    "date": "",
+    "due_date": "",
+    "currency": ""
+  }},
+  "totals": {{
+    "subtotal": 0.00,
+    "tax_amount": 0.00,
+    "total_amount": 0.00,
+    "currency": ""
+  }}
+}}
+
+Respond with ONLY the JSON object above, no other text.

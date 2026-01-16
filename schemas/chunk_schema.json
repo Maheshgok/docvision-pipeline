@@ -1,0 +1,93 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Chunk Document Schema",
+  "description": "Schema for chunk documents used in parallel processing",
+  "type": "object",
+  "properties": {
+    "job_id": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9_-]+$"
+    },
+    "tenant_id": {
+      "type": "string", 
+      "pattern": "^[a-zA-Z0-9_-]+$"
+    },
+    "chunk_id": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9_-]+$"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["PENDING", "PROCESSING", "COMPLETED", "FAILED"]
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "description": {"type": "string"},
+          "hsn_code": {"type": "string"},
+          "quantity": {"type": "number"},
+          "rate": {"type": "number"},
+          "taxable_amount": {"type": "number"},
+          "gst_percentage": {"type": "number"},
+          "gst_amount": {"type": "number"},
+          "total_amount": {"type": "number"}
+        },
+        "required": ["description", "quantity", "rate", "total_amount"]
+      },
+      "minItems": 1,
+      "maxItems": 5
+    },
+    "enriched_items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "original_item": {
+            "type": "object"
+          },
+          "business_insights": {
+            "type": "object",
+            "properties": {
+              "business_category": {"type": "string"},
+              "expense_classification": {"type": "string"},
+              "tax_implications": {"type": "string"},
+              "compliance_notes": {"type": "string"},
+              "cost_center_suggestion": {"type": "string"},
+              "budget_category": {"type": "string"},
+              "seasonal_pattern": {"type": "string"},
+              "vendor_relationship": {"type": "string"}
+            }
+          }
+        }
+      }
+    },
+    "processing_stats": {
+      "type": "object",
+      "properties": {
+        "processing_duration_seconds": {"type": "number"},
+        "tokens_used": {"type": "integer"},
+        "retry_count": {"type": "integer"}
+      }
+    },
+    "error": {
+      "type": "object",
+      "properties": {
+        "message": {"type": "string"},
+        "error_code": {"type": "string"},
+        "timestamp": {"type": "string", "format": "date-time"}
+      }
+    }
+  },
+  "required": ["job_id", "tenant_id", "chunk_id", "status", "created_at", "items"],
+  "additionalProperties": false
+}

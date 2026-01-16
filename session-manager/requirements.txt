@@ -1,0 +1,7 @@
+flask==2.3.3
+gunicorn==21.2.0
+firebase-admin==6.2.0
+google-cloud-run==0.10.0
+google-cloud-firestore==2.11.1
+google-api-core==2.11.1
+requests==2.31.0

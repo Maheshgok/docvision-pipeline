@@ -1,0 +1,38 @@
+Extract line items from this invoice image and return ONLY valid JSON.
+
+IMPORTANT: Your response must be ONLY valid JSON, no additional text or explanations.
+
+Extract each line item with:
+- Description/name of product/service
+- HSN/SAC code (if available)
+- Quantity
+- Rate/unit price
+- Taxable amount
+- GST percentage
+- GST amount
+- Total amount
+
+Return this exact JSON structure:
+{{
+  "line_items": [
+    {{
+      "description": "",
+      "hsn_code": "",
+      "quantity": 0,
+      "rate": 0.00,
+      "taxable_amount": 0.00,
+      "gst_percentage": 0.00,
+      "gst_amount": 0.00,
+      "total_amount": 0.00
+    }}
+  ],
+  "summary": {{
+    "total_items": 0,
+    "total_quantity": 0,
+    "total_taxable_amount": 0.00,
+    "total_gst_amount": 0.00,
+    "grand_total": 0.00
+  }}
+}}
+
+Respond with ONLY the JSON object above, no other text.

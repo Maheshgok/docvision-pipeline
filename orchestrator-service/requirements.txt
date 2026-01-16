@@ -1,0 +1,8 @@
+# Orchestrator Service - LIGHTWEIGHT per Approach Doc
+# Target: 256MB memory, no LLM, no heavy deps
+
+flask>=2.3.0
+flask-cors>=4.0.0
+gunicorn>=21.2.0
+google-cloud-firestore>=2.11.0
+requests>=2.31.0

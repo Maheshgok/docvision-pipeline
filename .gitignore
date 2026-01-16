@@ -1,0 +1,77 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+ENV/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+logs/
+*.log
+**/downloaded-logs-*.json
+
+# Service account keys and sensitive files
+**/service-account-key.json
+**/key.json
+**/*-key.json
+.env
+*.env
+
+# Test files
+**/test_*.jpg
+**/test_*.png
+**/test_*.pdf
+**/Bill_Copy.jpg
+
+# Config files with sensitive data
+config.yaml
+*.private.yaml
+
+# Temporary files
+*.tmp
+*.temp
+temp_*
+
+# Node modules
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+# Local Netlify folder
+.netlify
